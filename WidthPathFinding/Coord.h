@@ -1,6 +1,9 @@
 #pragma once
 
+#include <tuple>
+
 #include "Specifications.h"
+
 
 class Coord {
 public:
@@ -14,4 +17,5 @@ public:
     bool operator==(const Coord& other) const;
     bool operator!=(const Coord& other) const;
     Coord operator+(const Coord& other) const;
+    bool operator<(const Coord& other) const;
 };

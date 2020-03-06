@@ -21,18 +21,12 @@
     <ClCompile Include="Coord.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Grid.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Coord.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Specifications.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Grid.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

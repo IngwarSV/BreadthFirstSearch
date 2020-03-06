@@ -27,3 +27,7 @@ Coord Coord::operator+(const Coord& other) const {
 
 	return temp;
 }
+
+bool Coord::operator<(const Coord& other) const {
+    return std::tie(this->x, this->y) < std::tie(other.x, other.y);
+}

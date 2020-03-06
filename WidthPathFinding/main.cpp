@@ -1,39 +1,55 @@
 #include <iostream>
 #include <iomanip> // std::setfill(' ') << std::setw(WIDTH)
+#include <algorithm>
 #include <vector>
 #include <queue>
 #include <map>
 #include <set>
 #include <array>
 
+
 #include "Coord.h"
 
 
 class Grid {
 private:
-    void obstacleCreation() {
-        int obstacleAmount = WIDTH * HEIGHT / OBSTACLES_RATIO;
-        Coord start1 = Coord();
-        Coord start2 = Coord() + Coord(0,-1);
-        
-        for (int i = 0; i < obstacleAmount; ++i) {
-            Coord obstacleCoord = Coord(rand() % (WIDTH - 3) + 1, rand() % (HEIGHT - 3) + 1);
-
-            if (obstacleCoord != start1 && obstacleCoord != start2) {
-                obstacles.insert(obstacleCoord);
+    void mapBoundariesCreation() {
+        for (int i = 0; i < HEIGHT; ++i) {
+            for (int j = 0; j < WIDTH; ++j) {
+                if (i == 0 || i == BOTTOM_EDGE || j == 0 || j == RIGHT_EDGE) {
+                    map_borders.push_back(Coord{ j, i });
+                }
             }
         }
     }
+
+    void add_wall(int x1, int y1, int x2, int y2) {
+        for (int x = x1; x < x2; ++x) {
+            for (int y = y1; y < y2; ++y) {
+                obstacles.push_back(Coord{ x, y });
+            }
+        }
+    }
+
+    void obstacleCreation() {
+        //add_wall(3, 3, 5, 12);
+        add_wall(13, 4, 15, 15);
+        add_wall(21, 0, 23, 7);
+        add_wall(23, 5, 26, 7);
+    }
+
 public:
     std::array<Coord, 4> DIRS;
-    std::set<Coord> obstacles;
+    std::vector<Coord> map_borders;
+    std::vector<Coord> obstacles;
     Coord finish;
     Coord start;
 
     Grid() {
-        DIRS = { Coord{1,0}, Coord{-1,0}, Coord{0,1}, Coord{0,-1} };
-        finish = { WIDTH * 2, HEIGHT * 2 };
-        start = { 1, HEIGHT / 2 };
+        DIRS = { Coord{ 1, 0 }, Coord{ -1, 0 }, Coord{ 0, 1 }, Coord{ 0, -1 } };
+        finish = { WIDTH - 6, 2};
+        start = { 4, HEIGHT / 2 };
+        mapBoundariesCreation();
         obstacleCreation();
     }
 
@@ -42,9 +58,9 @@ public:
     }
 
     bool notObstacle(Coord next) {
-        return obstacles.find(next) == obstacles.end();
+        return std::find(std::begin(obstacles), std::end(obstacles), next) == std::end(obstacles);
     }
-    
+
     std::vector<Coord> giveNeighbors(Coord& current) {
         std::vector<Coord> neighbors;
 
@@ -55,97 +71,84 @@ public:
                 neighbors.push_back(temp);
             }
         }
+        if ((current.x + current.y) % 2 == 0) {
+            std::reverse(neighbors.begin(), neighbors.end());
+        }
+
         return neighbors;
     }
-
-    
 };
 
-void drawMap(Grid& grid, std::vector<Coord>* border = nullptr) {
+void drawMap(Grid& grid, std::map<Coord, Coord>* cameFrom = nullptr, std::vector<Coord>* path = nullptr) {
         system("cls");
 
-        std::cout << std::setfill('#') << std::setw(WIDTH) << '#' << std::endl;
-
-        for (int i = 1; i < BOTTOM_EDGE; ++i) {
+        for (int i = 0; i < HEIGHT; ++i) {
             for (int j = 0; j < WIDTH; ++j) {
-                if (j == 0 || j == RIGHT_EDGE) {
+                Coord id{ j, i };
+
+                if (std::find(grid.map_borders.begin(), grid.map_borders.end(), id) != grid.map_borders.end()) {
                     std::cout << '#';
-                    continue;
                 }
-                if (i == grid.start.y && j == grid.start.x) {
+                else if (std::find(grid.obstacles.begin(), grid.obstacles.end(), id) != grid.obstacles.end()) {
+                    std::cout << '#';
+                }
+                else if (id == grid.start) {
                     std::cout << 'S';
-                    continue;
                 }
-                if (i == grid.finish.y && j == grid.finish.x) {
+                else if (id == grid.finish) {
                     std::cout << 'F';
-                    continue;
+                }
+                else if (path && std::find(path->begin(), path->end(), id) != path->end()) {
+                    std::cout << 'o';
+                }
+                else if (cameFrom && cameFrom->find(id) != cameFrom->end()) {
+                    Coord from = (*cameFrom)[id];
+                    if (id.x == from.x - 1) {
+                        std::cout << '>';
+                    }
+                    else if (id.x == from.x + 1) {
+                        std::cout << '<';
+                    }
+                    else if (id.y == from.y + 1) {
+                        std::cout << '^';
+                    }
+                    else if (id.y == from.y - 1) {
+                        std::cout << 'v';
+                    }
                 }
                 else {
-                    bool flag = false;
-                    size_t k = 1;
-                    if (border) {
-                        for (; !(*border->end); ++k) {
-                            if (j == (*border)[k].x && i == (*border)[k].y) {
-                                std::cout << 'o';
-                                flag = true;
-                                break;
-                            }
-                        }
-                    }
-                    /*if (snake.getSnakeLength() > 1 && !flag) {
-                        if (j == snake.getSnakeCoord(k).x && i == snake.getSnakeCoord(k).y) {
-                            std::cout << snake.getTailEndForm();
-                            continue;
-                        }
-                    }
-                    if (!flag) {
-                        for (k = 0; k < obstacles.size(); ++k) {
-                            if (j == this->obstaclesList[k].x && i == this->obstaclesList[k].y) {
-                                std::cout << this->obstacleForm;
-                                flag = true;
-                                break;
-                            }
-                        }
-                    }*/
-                    if (!flag) {
-                        std::cout << ' ';
-                    }
+                    std::cout << ' ';
                 }
             }
             std::cout << std::endl;
         }
-
-        std::cout << std::setfill('#') << std::setw(WIDTH) << '#' << std::endl;
-
         std::cout << std::endl;
-          
 };
-
-
-
 
 int main() {
     Grid grid;
     
     drawMap(grid);
 
-    while (true) {
-        std::cout << "Please enter finish coordinates: ";
+    /*while (true) {
+        std::cout << "Please enter coordinates of finish: ";
         std::cin >> grid.finish.x >> grid.finish.y;
         if (grid.inBoundaries(grid.finish) && grid.notObstacle(grid.finish)) {
             break;
         }
-    }
+    }*/
             
-    std::queue<Coord> border;
+    std::queue<Coord> searchBoundary;
     std::map<Coord, Coord> cameFrom;
     std::vector<Coord> forDrawing;
+    
 
-    border.push(grid.start);
-    cameFrom.insert(grid.start, grid.start);
+    searchBoundary.push(grid.start);
+    
+    cameFrom.insert(std::pair<Coord, Coord>(grid.start, grid.start));
 
-    while (!border.empty()) {
-        Coord current = border.front();
+    while (!searchBoundary.empty()) {
+        Coord current = searchBoundary.front();
 
         if (current == grid.finish) {
             break;
@@ -154,49 +157,28 @@ int main() {
         for (Coord next : grid.giveNeighbors(current))
         {
             if (cameFrom.find(next) == cameFrom.end()) {
-                border.push(next);
+                searchBoundary.push(next);
                 cameFrom.insert(std::pair<Coord, Coord>(next, current));
             }
         }
         forDrawing.push_back(current);
-        border.pop();
-        drawMap(grid, &forDrawing);
+        searchBoundary.pop();
+        drawMap(grid, &cameFrom);
     }
 
     Coord current = grid.finish;
+    std::vector<Coord> path;
+    path.push_back(grid.finish);
+    
+    while (current != grid.start) {
+        current = cameFrom.at(current);
+        path.push_back(current);
+    }
 
+    path.push_back(current);
+    std::reverse(std::begin(path),std::end(path));
 
-        path = [current]
-        while current != start:
-    current = came_from[current]
-        path.append(current)
-        path.append(start) # optional
-        path.reverse() # optional
-
-
-
-
-
-   /* frontier = queue()
-        frontier.put(start)
-        came_from = {}
-        came_from[start] = none
-
-        while not frontier.empty() :
-            current = frontier.get()
-
-            if current == goal :
-                break
-
-                for next in graph.neighbors(current) :
-                    if next not in came_from :
-    frontier.put(next)
-        came_from[next] = current*/
-
-
-
-
-
+    drawMap(grid, &cameFrom, &path);
 
 	return 0;
 }
